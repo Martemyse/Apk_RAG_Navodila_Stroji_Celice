@@ -1,0 +1,23 @@
+# PDF Processing (minimal)
+pymupdf
+pymupdf4llm
+
+# Embeddings
+openai
+
+# Vector DB
+weaviate-client
+
+# Text Processing
+tiktoken
+
+# Utilities
+python-dotenv
+tqdm
+loguru
+pydantic
+pydantic-settings
+
+# Async & HTTP
+httpx
+aiofiles

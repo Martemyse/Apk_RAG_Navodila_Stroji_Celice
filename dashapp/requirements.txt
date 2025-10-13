@@ -1,0 +1,17 @@
+# Dash & Plotly
+dash
+dash-bootstrap-components
+plotly
+
+# HTTP Client
+requests
+httpx
+websockets
+
+# Utilities
+python-dotenv
+loguru
+
+# Markdown rendering
+markdown
+

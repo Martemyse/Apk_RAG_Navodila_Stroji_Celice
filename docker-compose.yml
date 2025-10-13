@@ -1,0 +1,104 @@
+services:
+  # ============================================================================
+  # Ingestion Service
+  # ============================================================================
+  ingestion:
+    build:
+      context: ./ingestion
+      dockerfile: Dockerfile
+    container_name: rag_ingestion
+    volumes:
+      - ./data_pdf:/app/data_pdf:ro
+      - ./data_processed:/app/data_processed
+      - ingestion_models:/app/models
+    environment:
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-BAAI/bge-large-en-v1.5}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
+      - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
+      - CHUNK_SIZE=${CHUNK_SIZE:-600}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-100}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - INGESTION_BATCH_SIZE=${INGESTION_BATCH_SIZE:-100}
+      - ENABLE_OCR=${ENABLE_OCR:-false}
+    networks:
+      - rag_network
+    depends_on:
+      - retrieval
+    restart: unless-stopped
+    command: ["python", "main.py"]
+
+  # ============================================================================
+  # Retrieval Service (FastAPI + MCP)
+  # ============================================================================
+  retrieval:
+    build:
+      context: ./retrieval
+      dockerfile: Dockerfile
+    container_name: rag_retrieval
+    ports:
+      - "8001:8001"
+    volumes:
+      - retrieval_models:/app/models
+      - ./data_pdf:/app/data_pdf:ro
+    environment:
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-BAAI/bge-large-en-v1.5}
+      - RERANKER_PROVIDER=${RERANKER_PROVIDER:-local}
+      - RERANKER_MODEL=${RERANKER_MODEL:-BAAI/bge-reranker-large}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
+      - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
+      - API_HOST=${API_HOST:-0.0.0.0}
+      - API_PORT=${API_PORT:-8001}
+      - DEFAULT_TOP_K=${DEFAULT_TOP_K:-25}
+      - RERANK_TOP_K=${RERANK_TOP_K:-5}
+      - ENABLE_RERANK=${ENABLE_RERANK:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MCP_ENABLE=${MCP_ENABLE:-true}
+    networks:
+      - rag_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # Dash UI
+  # ============================================================================
+  dashapp:
+    build:
+      context: ./dashapp
+      dockerfile: Dockerfile
+    container_name: rag_dashapp
+    ports:
+      - "8050:8050"
+    environment:
+      - DASH_HOST=${DASH_HOST:-0.0.0.0}
+      - DASH_PORT=${DASH_PORT:-8050}
+      - DASH_DEBUG=${DASH_DEBUG:-false}
+      - RETRIEVAL_API_URL=${RETRIEVAL_API_URL:-http://retrieval:8001}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    networks:
+      - rag_network
+    depends_on:
+      - retrieval
+    restart: unless-stopped
+
+networks:
+  rag_network:
+    driver: bridge
+    # Connect to external Weaviate network if needed
+    external: true
+    name: infrastructure_weaviate_network
+
+volumes:
+  ingestion_models:
+    driver: local
+  retrieval_models:
+    driver: local
+

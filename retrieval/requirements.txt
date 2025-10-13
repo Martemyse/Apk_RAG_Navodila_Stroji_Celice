@@ -1,0 +1,38 @@
+# FastAPI & Web
+fastapi
+uvicorn[standard]
+websockets
+python-multipart
+sse-starlette
+
+# Embeddings & Reranking
+openai
+
+# Vector DB
+weaviate-client
+
+# Text Processing
+tiktoken
+
+# HTTP Client
+httpx
+
+# Utilities
+python-dotenv
+loguru
+pydantic
+pydantic-settings
+
+# Monitoring (optional)
+prometheus-client
+
+# JWT (optional)
+# python-jose[cryptography]
+# passlib[bcrypt]
+
+# MCP (temporarily disabled)
+# mcp
+
+# Cohere (removed - not needed)
+# cohere
+
