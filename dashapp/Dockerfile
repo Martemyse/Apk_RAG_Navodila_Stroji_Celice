@@ -13,8 +13,7 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Note: Source code is mounted as volume in docker-compose.yml, not copied here
 
 # Expose Dash port
 EXPOSE 8050

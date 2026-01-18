@@ -8,14 +8,17 @@ services:
       dockerfile: Dockerfile
     container_name: rag_ingestion
     volumes:
+      - ./ingestion:/app:rw  # Mount source code for live development
       - ./data_pdf:/app/data_pdf:ro
       - ./data_processed:/app/data_processed
+      - ./postgres:/app/postgres:ro
       - ingestion_models:/app/models
     environment:
       - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
+      - WEAVIATE_GRPC_URL=${WEAVIATE_GRPC_URL:-weaviate:50051}
       - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
@@ -46,6 +49,7 @@ services:
     ports:
       - "8001:8001"
     volumes:
+      - ./retrieval:/app:rw  # Mount source code for live development
       - retrieval_models:/app/models
       - ./data_pdf:/app/data_pdf:ro
       - ./data_processed:/app/data_processed:ro
@@ -54,6 +58,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
+      - WEAVIATE_GRPC_URL=${WEAVIATE_GRPC_URL:-weaviate:50051}
       - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
@@ -85,6 +90,8 @@ services:
     container_name: rag_dashapp
     ports:
       - "8050:8050"
+    volumes:
+      - ./dashapp:/app:rw  # Mount source code for live development
     environment:
       - DASH_HOST=${DASH_HOST:-0.0.0.0}
       - DASH_PORT=${DASH_PORT:-8050}

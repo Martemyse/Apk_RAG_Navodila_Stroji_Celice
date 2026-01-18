@@ -93,9 +93,9 @@ class TextBlock:
 @dataclass
 class ImageBlock:
     """Image block with position and nearby text."""
-    image_id: Optional[str] = None
     bbox: Dict[str, float]  # {x1, y1, x2, y2}
     page_number: int
+    image_id: Optional[str] = None
     caption: Optional[str] = None
     nearby_text: List[str] = field(default_factory=list)  # Text blocks near image
 

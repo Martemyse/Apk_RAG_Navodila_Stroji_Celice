@@ -71,9 +71,9 @@ class ImageExtractor:
                         # Create image block with path
                         image_block = ImageBlock(
                             bbox=bbox,
-                            page_number=page_num + 1,
-                            image_hash=image_hash
+                            page_number=page_num + 1
                         )
+                        # Store image_path as attribute (ImageBlock doesn't have image_hash field, it's stored in ImageAsset)
                         image_block.image_path = str(image_path)
                         
                         images.append(image_block)

@@ -29,3 +29,4 @@ RUN git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git /tmp/pgve
 
 # (optional) place init scripts for auto-enabling extensions
 COPY ./init-pgvector.sql /docker-entrypoint-initdb.d/
+COPY ./schema.sql /docker-entrypoint-initdb.d/

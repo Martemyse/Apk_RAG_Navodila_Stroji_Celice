@@ -86,7 +86,16 @@ class FusedIngestionWorker:
                 file_path=parsed_pdf.file_path,
                 total_pages=parsed_pdf.total_pages
             )
-            document.id = await self.postgres.insert_document(document)
+            logger.debug(f"Document object: id={document.id}, doc_id={document.doc_id}, title={document.title[:50] if document.title else 'None'}")
+            try:
+                document.id = await self.postgres.insert_document(document)
+                logger.debug(f"Document inserted with ID: {document.id}")
+            except Exception as db_error:
+                # Safe logging - convert exception to string first
+                error_msg = str(db_error)
+                logger.error(f"Failed to insert document: {error_msg}")
+                logger.exception("Full exception traceback:")
+                raise
             
             # 3. Build content units
             logger.info("Step 3/5: Building content units")
@@ -173,7 +182,8 @@ class FusedIngestionWorker:
     async def close(self):
         """Clean up resources."""
         await self.postgres.close()
-        self.weaviate.close()
+        if self.weaviate:
+            self.weaviate.close()
 
 
 async def main():

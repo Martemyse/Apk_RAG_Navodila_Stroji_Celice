@@ -3,21 +3,25 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && apt-get install -y \
     build-essential \
+    ca-certificates \
+    openssl \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
+# Install Python dependencies (CPU-only torch to avoid CUDA bloat)
+RUN pip config set global.trusted-host "pypi.org files.pythonhosted.org pypi.python.org" && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Create necessary directories
+# Note: Source code is mounted as volume in docker-compose.yml, not copied here
 RUN mkdir -p /app/models /app/data_pdf
 
 # Expose API port

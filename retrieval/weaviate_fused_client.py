@@ -1,6 +1,7 @@
 """Weaviate client for ContentUnit retrieval."""
 import time
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
+from urllib.parse import urlparse
 import weaviate
 import weaviate.classes.query as wq
 from loguru import logger
@@ -8,6 +9,16 @@ from config import get_settings
 
 settings = get_settings()
 
+def _parse_host_port(url: str, default_port: int) -> Tuple[str, int]:
+    """Parse host and port from a URL or host:port string."""
+    if not url:
+        return ("weaviate", default_port)
+    if "://" not in url:
+        url = f"http://{url}"
+    parsed = urlparse(url)
+    host = parsed.hostname or url
+    port = parsed.port or default_port
+    return host, port
 
 class ContentUnitResult:
     """Content unit search result."""
@@ -64,26 +75,29 @@ class WeaviateFusedRetrievalClient:
             max_retries = 5
             for attempt in range(max_retries):
                 try:
+                    http_host, http_port = _parse_host_port(settings.weaviate_url, 8080)
+                    grpc_url = getattr(settings, "weaviate_grpc_url", "")
+                    grpc_host, grpc_port = _parse_host_port(grpc_url, 50051)
+                    if not grpc_url:
+                        grpc_host = http_host
                     if settings.weaviate_api_key:
                         self.client = weaviate.connect_to_custom(
-                            http_host=settings.weaviate_url.replace("http://", "").replace("https://", ""),
-                            http_port=8080,
+                            http_host=http_host,
+                            http_port=http_port,
                             http_secure=False,
-                            grpc_host=settings.weaviate_url.replace("http://", "").replace("https://", ""),
-                            grpc_port=50051,
+                            grpc_host=grpc_host,
+                            grpc_port=grpc_port,
                             grpc_secure=False,
                             auth_credentials=weaviate.auth.AuthApiKey(settings.weaviate_api_key),
-                            timeout=weaviate.config.Timeout(query=settings.weaviate_timeout)
                         )
                     else:
                         self.client = weaviate.connect_to_custom(
-                            http_host=settings.weaviate_url.replace("http://", "").replace("https://", ""),
-                            http_port=8080,
+                            http_host=http_host,
+                            http_port=http_port,
                             http_secure=False,
-                            grpc_host=settings.weaviate_url.replace("http://", "").replace("https://", ""),
-                            grpc_port=50051,
+                            grpc_host=grpc_host,
+                            grpc_port=grpc_port,
                             grpc_secure=False,
-                            timeout=weaviate.config.Timeout(query=settings.weaviate_timeout)
                         )
                     
                     self.client.collections.list_all()

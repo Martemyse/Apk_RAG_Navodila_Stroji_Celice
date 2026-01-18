@@ -22,7 +22,7 @@ def create_content_unit_schema(client: weaviate.WeaviateClient):
             name="ContentUnit",
             description="Fused text+image content units for semantic search",
             properties=[
-                Property(name="id", data_type=DataType.TEXT, skip_vectorization=True),
+                # Note: 'id' is reserved by Weaviate - use uuid parameter in batch.add_object()
                 Property(name="document_id", data_type=DataType.TEXT, skip_vectorization=True),
                 Property(name="doc_id", data_type=DataType.TEXT, skip_vectorization=True),
                 Property(name="page_number", data_type=DataType.INT, skip_vectorization=True),
@@ -61,7 +61,7 @@ def create_document_schema(client: weaviate.WeaviateClient):
             name="Document",
             description="Document metadata",
             properties=[
-                Property(name="id", data_type=DataType.TEXT, skip_vectorization=True),
+                # Note: 'id' is reserved by Weaviate - use uuid parameter in batch.add_object()
                 Property(name="doc_id", data_type=DataType.TEXT, skip_vectorization=True),
                 Property(name="title", data_type=DataType.TEXT),
                 Property(name="file_path", data_type=DataType.TEXT, skip_vectorization=True),

@@ -1,5 +1,6 @@
 """Build fused text+image content units from parsed PDF."""
-from typing import List, Dict, Tuple
+from pathlib import Path
+from typing import List, Dict, Tuple, Optional
 from loguru import logger
 import tiktoken
 from models import (
@@ -47,19 +48,27 @@ class ContentUnitBuilder:
         image_blocks = self.image_extractor.extract_images_from_pdf(pdf_path, parsed_pdf.doc_id)
         
         # Create image assets
-        image_map = {}  # Map image_hash -> ImageAsset
+        image_map = {}  # Map image_path -> ImageAsset
         for img_block in image_blocks:
+            image_path = getattr(img_block, 'image_path', '')
+            # Calculate hash from image file if path exists
+            image_hash = None
+            if image_path and Path(image_path).exists():
+                import hashlib
+                with open(image_path, 'rb') as f:
+                    image_hash = hashlib.sha256(f.read()).hexdigest()
+            
             image_asset = ImageAsset(
                 document_id=document.id,
                 doc_id=parsed_pdf.doc_id,
                 page_number=img_block.page_number,
                 bbox=img_block.bbox,
-                image_path=getattr(img_block, 'image_path', ''),
-                image_hash=getattr(img_block, 'image_hash', None)
+                image_path=image_path,
+                image_hash=image_hash
             )
             image_assets.append(image_asset)
-            if img_block.image_hash:
-                image_map[img_block.image_hash] = image_asset
+            if image_path:
+                image_map[image_path] = image_asset
         
         # Process each page
         for page_layout in parsed_pdf.pages:
@@ -91,8 +100,9 @@ class ContentUnitBuilder:
                 # Create fused text
                 fused_text = " ".join(fused_text_parts) if fused_text_parts else "Image"
                 
-                # Get corresponding image asset
-                image_asset = image_map.get(img_block.image_hash)
+                # Get corresponding image asset by path
+                image_path = getattr(img_block, 'image_path', '')
+                image_asset = image_map.get(image_path) if image_path else None
                 
                 # Create content unit
                 unit = ContentUnit(

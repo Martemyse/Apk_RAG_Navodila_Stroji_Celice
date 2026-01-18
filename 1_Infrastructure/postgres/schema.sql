@@ -3,6 +3,9 @@
 -- Text-Image Fused Content Units Architecture
 -- ============================================================================
 
+-- Connect to the postgres database (created by POSTGRES_DB env var)
+\connect postgres
+
 -- Documents table
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -3,7 +3,9 @@ services:
     build: ./postgres
     container_name: postgres_c
     environment:
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=martinmi
+      - POSTGRES_DB=postgres
     ports:
       - "5432:5432"
     volumes:
