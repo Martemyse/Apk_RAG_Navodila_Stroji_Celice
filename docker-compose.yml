@@ -13,21 +13,27 @@ services:
       - ingestion_models:/app/models
     environment:
       - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-BAAI/bge-large-en-v1.5}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
       - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
-      - CHUNK_SIZE=${CHUNK_SIZE:-600}
-      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-100}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - CHUNK_SIZE=${CHUNK_SIZE:-300}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-30}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - INGESTION_BATCH_SIZE=${INGESTION_BATCH_SIZE:-100}
+      - INGESTION_BATCH_SIZE=${INGESTION_BATCH_SIZE:-50}
       - ENABLE_OCR=${ENABLE_OCR:-false}
     networks:
       - rag_network
+      - postgres_network
     depends_on:
       - retrieval
     restart: unless-stopped
-    command: ["python", "main.py"]
+    command: ["python", "main_fused.py"]
 
   # ============================================================================
   # Retrieval Service (FastAPI + MCP)
@@ -42,24 +48,26 @@ services:
     volumes:
       - retrieval_models:/app/models
       - ./data_pdf:/app/data_pdf:ro
+      - ./data_processed:/app/data_processed:ro
     environment:
       - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-BAAI/bge-large-en-v1.5}
-      - RERANKER_PROVIDER=${RERANKER_PROVIDER:-local}
-      - RERANKER_MODEL=${RERANKER_MODEL:-BAAI/bge-reranker-large}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - COHERE_API_KEY=${COHERE_API_KEY:-}
+      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
       - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
       - API_HOST=${API_HOST:-0.0.0.0}
       - API_PORT=${API_PORT:-8001}
-      - DEFAULT_TOP_K=${DEFAULT_TOP_K:-25}
-      - RERANK_TOP_K=${RERANK_TOP_K:-5}
-      - ENABLE_RERANK=${ENABLE_RERANK:-true}
+      - DEFAULT_TOP_K=${DEFAULT_TOP_K:-10}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - MCP_ENABLE=${MCP_ENABLE:-true}
+      - MCP_ENABLE=${MCP_ENABLE:-false}
     networks:
       - rag_network
+      - postgres_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
@@ -95,6 +103,9 @@ networks:
     # Connect to external Weaviate network if needed
     external: true
     name: infrastructure_weaviate_network
+  postgres_network:
+    external: true
+    name: postgres_network
 
 volumes:
   ingestion_models:

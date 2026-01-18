@@ -5,6 +5,10 @@ from abc import ABC, abstractmethod
 from loguru import logger
 from sentence_transformers import SentenceTransformer
 from config import get_settings
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
 settings = get_settings()
 
@@ -30,10 +34,12 @@ class LocalEmbeddingProvider(EmbeddingProvider):
     def __init__(
         self,
         model_name: str = "BAAI/bge-large-en-v1.5",
-        device: Optional[str] = None
+        device: Optional[str] = None,
+        normalize: bool = True
     ):
         """Initialize local embedding provider."""
         self.model_name = model_name
+        self.normalize = normalize
         
         logger.info(f"Loading embedding model: {model_name}")
         
@@ -53,7 +59,7 @@ class LocalEmbeddingProvider(EmbeddingProvider):
     def embed(self, text: str) -> List[float]:
         """Generate embedding for text."""
         try:
-            embedding = self.model.encode(text, normalize_embeddings=True)
+            embedding = self.model.encode(text, normalize_embeddings=self.normalize)
             return embedding.tolist()
         except Exception as e:
             logger.error(f"Error generating embedding: {e}")
@@ -76,13 +82,13 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         """Initialize OpenAI embedding provider."""
         self.model = model
         
+        if OpenAI is None:
+            logger.error("OpenAI package not installed")
+            raise ImportError("openai package is required for OpenAI embeddings")
+        
         try:
-            from openai import OpenAI
             self.client = OpenAI(api_key=api_key)
             logger.info(f"OpenAI client initialized with model: {model}")
-        except ImportError:
-            logger.error("OpenAI package not installed")
-            raise
         except Exception as e:
             logger.error(f"Error initializing OpenAI client: {e}")
             raise
@@ -122,8 +128,11 @@ def get_embedding_provider() -> EmbeddingProvider:
     provider = settings.embedding_provider.lower()
     
     if provider == "local":
+        device = None if settings.embedding_device.lower() == "auto" else settings.embedding_device
         return LocalEmbeddingProvider(
-            model_name=settings.embedding_model
+            model_name=settings.embedding_model,
+            device=device,
+            normalize=settings.embedding_normalize
         )
     elif provider == "openai":
         if not settings.openai_api_key:

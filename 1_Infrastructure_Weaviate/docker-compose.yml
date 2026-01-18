@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  weaviate:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: semitechnologies/weaviate:1.32.0
+    container_name: weaviate_c
+    restart: always
+    ports:
+      - "5433:8080"  # host:container (Weaviate HTTP)
+    environment:
+      # --- Client-generated vectors (Option A) ---
+      # Embeddings are generated in Python (ingestion/retrieval services)
+      # Weaviate just stores the pre-computed vectors
+      # No vectorizer modules needed - saves ~8GB Docker image space
+      
+      # Optional safety/perf
+      DISK_USE_READONLY_PERCENTAGE: "95"
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      CLUSTER_HOSTNAME: "node1"
+    volumes:
+      - ./weaviate-data:/var/lib/weaviate
+    networks:
+      - postgres_network
+
+# -----------------------------
+# Current Setup: Client-Generated Vectors (Option A)
+# 
+# Embeddings are generated in Python (ingestion/retrieval services):
+# - Local: sentence-transformers (all-MiniLM-L6-v2)
+# - Remote: OpenAI API (text-embedding-3-small)
+# 
+# Weaviate schema uses: vectorizer_config=wc.Configure.Vectorizer.none()
+# This means Weaviate just stores pre-computed vectors, no embedding generation.
+#
+# Benefits for fused RAG:
+# - Custom logic for TEXT_ONLY vs IMAGE_WITH_CONTEXT units
+# - Easy to add multimodal embeddings (OpenAI Vision, CLIP) in Python
+# - No large Docker pulls (~8GB saved)
+# - Full control over embedding strategy
+#
+# -----------------------------
+
+networks:
+  postgres_network:
+    external: true
+    name: postgres_network

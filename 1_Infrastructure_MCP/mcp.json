@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "mcp_postgres_c",
+        "/app/entrypoint.sh",
+        "mcp-postgres",
+        "--connections",
+        "postgresql://cursor_readonly:read@192.168.99.206:5432/bpsna_dobri_slabi_lj",
+        "--connections",
+        "postgresql://cursor_readonly:read@192.168.99.206:5432/layout_proizvodnja_libre_konva",
+        "--connections",
+        "postgresql://cursor_readonly:read@192.168.99.206:5432/postgres_db_anze",
+        "--max-rows",
+        "200"
+      ],
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    }
+  }
+}

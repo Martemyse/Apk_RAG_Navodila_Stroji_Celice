@@ -4,6 +4,7 @@ pymupdf4llm
 
 # Embeddings
 openai
+sentence-transformers
 
 # Vector DB
 weaviate-client
@@ -21,3 +22,6 @@ pydantic-settings
 # Async & HTTP
 httpx
 aiofiles
+
+# PostgreSQL
+asyncpg

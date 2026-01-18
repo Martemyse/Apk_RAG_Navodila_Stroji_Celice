@@ -1,0 +1,11 @@
+{
+  "config": {
+    "query_defaults": {
+      "limit": 20
+    },
+    "authentication": {
+      "anonymous_access_enabled": true
+    },
+    "persistence_data_path": "/var/lib/weaviate"
+  }
+}

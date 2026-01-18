@@ -5,8 +5,13 @@ Get the RAG pipeline running in 5 minutes!
 ## 🎯 Prerequisites
 
 - Docker & Docker Compose installed
-- 8GB+ RAM available
-- Internet connection (for initial model download)
+- 8GB+ RAM (CPU-only default), more if you enable GPU models
+- Internet connection (for initial model/API download)
+
+### Modes (set in `.env`)
+- CPU local (default): `EMBEDDING_PROVIDER=local`, `EMBEDDING_DEVICE=cpu`
+- GPU local: same as above but `EMBEDDING_DEVICE=cuda`
+- External API: `EMBEDDING_PROVIDER=openai` and set `OPENAI_API_KEY`
 
 ## 🚀 3-Step Setup
 
@@ -25,7 +30,7 @@ curl http://localhost:8080/v1/.well-known/ready
 ```bash
 cd ../2_Apk_RAG_Navodila_Stroji_Celice
 
-# Copy environment file
+# Copy environment template (single config file is .env)
 cp env.example .env
 
 # Start all services
@@ -70,7 +75,7 @@ curl -X POST http://localhost:8001/query \
 
 ## 📚 What Just Happened?
 
-1. **Weaviate** started with local embeddings (CPU)
+1. **Weaviate** started
 2. **Ingestion** processed PDFs from `data_pdf/` folder
 3. **Retrieval** API started on port 8001
 4. **Dash UI** started on port 8050
@@ -116,6 +121,29 @@ curl -X POST http://localhost:8001/query \
     "top_k": 5,
     "rerank": true
   }'
+```
+
+### Fused text-image extras (optional)
+
+1) Initialize PostgreSQL schema  
+```bash
+psql -h postgres -U postgres -d postgres -f postgres/schema.sql
+# or if Postgres is in Docker
+docker exec -i postgres_c psql -U postgres -d postgres < postgres/schema.sql
+```
+
+2) Run fused ingestion  
+```bash
+docker-compose logs -f ingestion
+# or run once manually
+docker exec -it rag_ingestion python main_fused.py
+```
+
+3) Test fused query  
+```bash
+curl -X POST http://localhost:8001/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "emergency valve procedure", "top_k": 5}'
 ```
 
 ### Connect AI Agents (MCP)

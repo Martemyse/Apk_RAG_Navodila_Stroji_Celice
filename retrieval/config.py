@@ -1,12 +1,19 @@
 """Configuration for retrieval service."""
-import os
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from typing import Optional
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 
 class Settings(BaseSettings):
     """Retrieval service configuration."""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
     
     # API Configuration
     api_host: str = Field(default="0.0.0.0")
@@ -19,8 +26,19 @@ class Settings(BaseSettings):
     weaviate_api_key: str = Field(default="")
     weaviate_timeout: int = Field(default=120)
     
-    # Embedding Configuration (cheapest model)
-    embedding_provider: str = Field(default="openai")  # 'openai' only
+    # PostgreSQL Configuration
+    postgres_host: str = Field(default="postgres")
+    postgres_port: int = Field(default=5432)
+    postgres_user: str = Field(default="postgres")
+    postgres_password: str = Field(default="postgres")
+    postgres_db: str = Field(default="postgres")
+    postgres_url: Optional[str] = Field(default=None)
+    
+    # Embedding Configuration
+    embedding_provider: str = Field(default="local")  # 'local' or 'openai'
+    embedding_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2")
+    embedding_device: str = Field(default="cpu")  # 'cpu', 'cuda', or 'auto'
+    embedding_normalize: bool = Field(default=True)
     openai_api_key: str = Field(default="")
     openai_embedding_model: str = Field(default="text-embedding-3-small")
     
@@ -55,12 +73,6 @@ class Settings(BaseSettings):
     mcp_server_name: str = Field(default="rag-navodila")
     mcp_server_version: str = Field(default="1.0.0")
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-
-
 # Global settings instance
 settings = Settings()
 

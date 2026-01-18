@@ -7,10 +7,10 @@ from loguru import logger
 from tqdm import tqdm
 
 from config import get_settings
-from parsers import get_parser, ParsedDocument
-from chunking import get_chunker
-from embeddings import get_embedding_provider
-from weaviate_client import get_weaviate_client
+from processing.parsers import get_parser, ParsedDocument
+from processing.chunking import get_chunker
+from embeddings.embeddings import get_embedding_provider
+from storage.weaviate_client import get_weaviate_client
 
 settings = get_settings()
 

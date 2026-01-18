@@ -7,6 +7,7 @@ sse-starlette
 
 # Embeddings & Reranking
 openai
+sentence-transformers
 
 # Vector DB
 weaviate-client
@@ -22,6 +23,9 @@ python-dotenv
 loguru
 pydantic
 pydantic-settings
+
+# PostgreSQL
+asyncpg
 
 # Monitoring (optional)
 prometheus-client

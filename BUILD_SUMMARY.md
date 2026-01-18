@@ -33,10 +33,10 @@ Built according to specifications - modular, scalable, and ready for your small 
 - **Image Extraction**: Prepared for Phase 2 (multi-modal)
 
 **Files:**
-- `ingestion/parsers.py` - PDF parsing
-- `ingestion/chunking.py` - Semantic chunking
-- `ingestion/embeddings.py` - Vectorization
-- `ingestion/weaviate_client.py` - Data ingestion
+- `ingestion/processing/parsers.py` - PDF parsing
+- `ingestion/processing/chunking.py` - Semantic chunking
+- `ingestion/embeddings/embeddings.py` - Vectorization
+- `ingestion/storage/weaviate_client.py` - Data ingestion
 - `ingestion/main.py` - Worker orchestration
 
 #### 2. **Retrieval Service (FastAPI)** ✅
@@ -117,19 +117,18 @@ Built according to specifications - modular, scalable, and ready for your small 
 
 ## 📚 Documentation Delivered
 
-### User Guides
-- ✅ `README.md` - Complete overview, architecture, features
-- ✅ `QUICKSTART.md` - 5-minute setup guide
-- ✅ `SETUP_GUIDE.md` - Detailed setup (40+ pages)
-- ✅ `DEPLOYMENT.md` - Production deployment guide
-- ✅ `CONTRIBUTING.md` - Development guidelines
-- ✅ `PROJECT_STRUCTURE.md` - Technical structure
+### User Guides (current)
+- ✅ `README.md` - Overview, architecture, features
+- ✅ `QUICKSTART.md` - 5-minute setup & fused add-ons
+- ✅ `DEPLOYMENT.md` - Production / advanced options
+- ✅ `PROJECT_STRUCTURE.md` - Structure + ops cheat sheet
 - ✅ `retrieval/MCP_SETUP.md` - AI agent integration
+- ✅ `CONTRIBUTING.md` - Development guidelines
 
 ### Configuration
-- ✅ `env.example` - All environment variables documented
-- ✅ `docker-compose.yml` - Orchestration with comments
-- ✅ `.gitignore` - Proper exclusions
+- ✅ `.env` (from `env.example`) - Single config source
+- ✅ `docker-compose.yml` - Orchestration
+- ✅ `.gitignore` - Exclusions
 
 ---
 

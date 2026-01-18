@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mcp_postgres:
+    build: .
+    container_name: mcp_postgres_c
+    working_dir: /app
+    # Keep container running - Cursor will exec mcp-postgres when needed
+    command: ["tail", "-f", "/dev/null"]
+    network_mode: bridge
+    environment:
+      - NODE_ENV=production
+      - TZ=Europe/Ljubljana
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    extra_hosts:
+      - "ecotech:192.168.99.206"
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
