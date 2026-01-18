@@ -47,6 +47,7 @@ logs/
 # Data
 data_processed/
 data_temp/
+data_pdf/*.pdf
 *.pkl
 *.pickle
 
