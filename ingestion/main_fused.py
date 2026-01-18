@@ -72,7 +72,9 @@ class FusedIngestionWorker:
         
         try:
             # Check if already ingested
-            # TODO: Add check in Postgres
+            if not force and await self.postgres.document_exists(doc_id):
+                logger.info(f"Document {doc_id} already exists in database, skipping")
+                return True
             
             # 1. Parse PDF layout
             logger.info("Step 1/5: Parsing PDF layout")

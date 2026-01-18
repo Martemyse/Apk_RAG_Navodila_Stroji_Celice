@@ -35,7 +35,7 @@ services:
       - postgres_network
     depends_on:
       - retrieval
-    restart: unless-stopped
+    restart: on-failure
     command: ["python", "main_fused.py"]
 
   # ============================================================================

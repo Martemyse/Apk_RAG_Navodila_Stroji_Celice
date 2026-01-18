@@ -176,6 +176,21 @@ class PostgresClient:
             if row:
                 return dict(row)
             return None
+    
+    async def document_exists(self, doc_id: str) -> bool:
+        """Check if document already exists in database."""
+        try:
+            async with self.pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    """
+                    SELECT id FROM documents WHERE doc_id = $1
+                    """,
+                    doc_id
+                )
+                return row is not None
+        except Exception as e:
+            logger.error(f"Error checking document existence: {e}")
+            return False
 
 
 def get_postgres_client() -> PostgresClient:
