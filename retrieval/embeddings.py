@@ -1,5 +1,6 @@
 """Embedding provider for query vectorization."""
 from typing import List, Optional
+import os
 import numpy as np
 from abc import ABC, abstractmethod
 from loguru import logger
@@ -11,6 +12,40 @@ except ImportError:
     OpenAI = None
 
 settings = get_settings()
+
+def _resolve_hf_model_path(model_name: str) -> str:
+    """Prefer local HF snapshot path when available."""
+    if model_name.startswith("/"):
+        return model_name
+
+    if model_name.count("/") == 1:
+        repo_slug = model_name.replace("/", "--")
+        hub_root = "/root/.cache/huggingface/hub"
+        model_root = os.path.join(hub_root, f"models--{repo_slug}")
+        if os.path.isdir(model_root):
+            refs_main = os.path.join(model_root, "refs", "main")
+            snapshots = os.path.join(model_root, "snapshots")
+            if os.path.isfile(refs_main):
+                try:
+                    with open(refs_main, "r", encoding="utf-8") as handle:
+                        commit = handle.read().strip()
+                    if commit:
+                        snapshot = os.path.join(snapshots, commit)
+                        if os.path.isdir(snapshot):
+                            return snapshot
+                except OSError:
+                    pass
+            if os.path.isdir(snapshots):
+                try:
+                    for entry in os.listdir(snapshots):
+                        snapshot = os.path.join(snapshots, entry)
+                        if os.path.isdir(snapshot):
+                            return snapshot
+                except OSError:
+                    pass
+            return model_root
+
+    return model_name
 
 
 class EmbeddingProvider(ABC):
@@ -40,15 +75,19 @@ class LocalEmbeddingProvider(EmbeddingProvider):
         """Initialize local embedding provider."""
         self.model_name = model_name
         self.normalize = normalize
-        
-        logger.info(f"Loading embedding model: {model_name}")
-        
+
+        resolved_model = _resolve_hf_model_path(model_name)
+        local_only = resolved_model != model_name or resolved_model.startswith("/")
+        logger.info(f"Loading embedding model: {resolved_model}")
+
         try:
-            self.model = SentenceTransformer(
-                model_name,
-                device=device,
-                cache_folder=str(settings.models_dir)
-            )
+            load_kwargs = {"device": device}
+            if local_only:
+                load_kwargs["local_files_only"] = True
+            else:
+                load_kwargs["cache_folder"] = str(settings.models_dir)
+
+            self.model = SentenceTransformer(resolved_model, **load_kwargs)
             logger.info(f"Model loaded successfully")
         except Exception as e:
             logger.error(f"Error loading model: {e}")
