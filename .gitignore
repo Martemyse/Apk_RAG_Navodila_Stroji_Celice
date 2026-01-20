@@ -47,9 +47,16 @@ logs/
 # Data
 data_processed/
 data_temp/
-data_pdf/*.pdf
+data_pdf/
+processed_data/
+processed_pdfs/
 *.pkl
 *.pickle
+
+# Caches and local artifacts
+.cache/
+.docker-nocreds/
+1_Infrastructure_Weaviate/weaviate-data/
 
 # Models (if downloading locally)
 models/
