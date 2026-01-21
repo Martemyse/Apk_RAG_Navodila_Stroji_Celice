@@ -25,10 +25,10 @@ class SearchResult:
     
     def __init__(self, obj: Any):
         """Initialize from Weaviate object."""
-        self.chunk_id = obj.properties.get("chunk_id", "")
+        self.chunk_id = getattr(obj, "uuid", "") or obj.properties.get("chunk_id", "")
         self.doc_id = obj.properties.get("doc_id", "")
         self.text = obj.properties.get("text", "")
-        self.page = obj.properties.get("page", 0)
+        self.page = obj.properties.get("page_number", 0)
         self.section_path = obj.properties.get("section_path", "")
         self.bbox = obj.properties.get("bbox", "")
         self.token_count = obj.properties.get("token_count", 0)
@@ -131,7 +131,7 @@ class WeaviateRetrievalClient:
             List of SearchResult objects
         """
         try:
-            chunks = self.client.collections.get("Chunk")
+            chunks = self.client.collections.get("ContentUnit")
             
             # Build filter if provided
             where_filter = None
@@ -186,7 +186,7 @@ class WeaviateRetrievalClient:
             List of SearchResult objects
         """
         try:
-            chunks = self.client.collections.get("Chunk")
+            chunks = self.client.collections.get("ContentUnit")
             
             # Build filter if provided
             where_filter = None
@@ -222,7 +222,7 @@ class WeaviateRetrievalClient:
             List of SearchResult objects
         """
         try:
-            chunks = self.client.collections.get("Chunk")
+            chunks = self.client.collections.get("ContentUnit")
             
             response = chunks.query.fetch_objects(
                 filters=wq.Filter.by_property("doc_id").equal(doc_id),

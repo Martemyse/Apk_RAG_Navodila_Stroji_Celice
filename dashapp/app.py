@@ -9,7 +9,14 @@ from loguru import logger
 import json
 
 # Configuration
-RETRIEVAL_API_URL = os.getenv("RETRIEVAL_API_URL", "http://retrieval:8001")
+def _default_retrieval_api_url() -> str:
+    """Choose default API URL based on OS."""
+    if os.name == "nt":
+        return "http://ecotech:8073"
+    return "http://retrieval:8073"
+
+
+RETRIEVAL_API_URL = os.getenv("RETRIEVAL_API_URL", _default_retrieval_api_url())
 DASH_DEBUG = os.getenv("DASH_DEBUG", "false").lower() == "true"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
@@ -214,7 +221,7 @@ def perform_search(n_clicks, n_submit, query, top_k, alpha, rerank_value):
         
         data = response.json()
         results = data.get("results", [])
-        processing_time = data.get("processing_time", 0)
+        processing_time = data.get("processing_time")
         total_results = data.get("total_results", 0)
         reranked = data.get("reranked", False)
         
@@ -292,7 +299,7 @@ def build_results_ui(
                     html.Div([
                         html.I(className="fas fa-clock fa-2x text-info mb-2"),
                         html.H6("Processing Time", className="text-muted"),
-                        html.P(f"{processing_time:.2f}s", className="mb-0")
+                        html.P(f"{processing_time:.2f}s" if processing_time is not None else "N/A", className="mb-0")
                     ])
                 ], width=4),
             ]),
@@ -332,7 +339,7 @@ def create_result_card(result: Dict[str, Any], index: int) -> dbc.Card:
     page = result.get("page", 0)
     text = result.get("text", "")
     section_path = result.get("section_path", "")
-    score = result.get("score", 0.0)
+    score = result.get("score")
     
     # Format document name
     doc_title = doc_id.replace("_", " ").replace("Navodila ", "Manual: ")
@@ -355,7 +362,7 @@ def create_result_card(result: Dict[str, Any], index: int) -> dbc.Card:
                         className="me-2"
                     ),
                     dbc.Badge(
-                        f"Score: {score:.3f}",
+                        f"Score: {score:.3f}" if score is not None else "Score: N/A",
                         color="success"
                     )
                 ], width=4, className="text-end")
@@ -396,12 +403,16 @@ def create_result_card(result: Dict[str, Any], index: int) -> dbc.Card:
 
 # Run app
 if __name__ == "__main__":
-    host = os.getenv("DASH_HOST", "0.0.0.0")
-    port = int(os.getenv("DASH_PORT", 8050))
-    
+    if os.name == "nt":
+        host = os.getenv("DASH_HOST", "127.0.0.1")
+        port = int(os.getenv("DASH_PORT", 8050))
+    else:
+        host = os.getenv("DASH_HOST", "0.0.0.0")
+        port = int(os.getenv("DASH_PORT", 8072))
+
     logger.info(f"Starting Dash app on {host}:{port}")
     logger.info(f"Retrieval API: {RETRIEVAL_API_URL}")
-    
+
     app.run(
         host=host,
         port=port,

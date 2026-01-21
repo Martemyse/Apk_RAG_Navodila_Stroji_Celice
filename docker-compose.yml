@@ -13,13 +13,19 @@ services:
       - ./data_processed:/app/data_processed
       - ./postgres:/app/postgres:ro
       - ingestion_models:/app/models
+      - ./.cache/huggingface:/root/.cache/huggingface:ro
     environment:
       - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
-      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
+      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate_c:8080}
       - WEAVIATE_GRPC_URL=${WEAVIATE_GRPC_URL:-weaviate:50051}
       - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
+      - HF_HOME=/root/.cache/huggingface
+      - HF_HUB_CACHE=/root/.cache/huggingface/hub
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -47,26 +53,32 @@ services:
       dockerfile: Dockerfile
     container_name: rag_retrieval
     ports:
-      - "8001:8001"
+      - "8073:8073"
     volumes:
       - ./retrieval:/app:rw  # Mount source code for live development
       - retrieval_models:/app/models
       - ./data_pdf:/app/data_pdf:ro
       - ./data_processed:/app/data_processed:ro
+      - ./.cache/huggingface:/root/.cache/huggingface:ro
     environment:
       - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
-      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate:8080}
+      - WEAVIATE_URL=${WEAVIATE_URL:-http://weaviate_c:8080}
       - WEAVIATE_GRPC_URL=${WEAVIATE_GRPC_URL:-weaviate:50051}
       - WEAVIATE_API_KEY=${WEAVIATE_API_KEY:-}
+      - HF_HOME=/root/.cache/huggingface
+      - HF_HUB_CACHE=/root/.cache/huggingface/hub
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-postgres}
       - API_HOST=${API_HOST:-0.0.0.0}
-      - API_PORT=${API_PORT:-8001}
+      - API_PORT=${API_PORT:-8073}
       - DEFAULT_TOP_K=${DEFAULT_TOP_K:-10}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - MCP_ENABLE=${MCP_ENABLE:-false}
@@ -75,7 +87,7 @@ services:
       - postgres_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8073/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -89,14 +101,14 @@ services:
       dockerfile: Dockerfile
     container_name: rag_dashapp
     ports:
-      - "8050:8050"
+      - "8072:8072"
     volumes:
       - ./dashapp:/app:rw  # Mount source code for live development
     environment:
       - DASH_HOST=${DASH_HOST:-0.0.0.0}
-      - DASH_PORT=${DASH_PORT:-8050}
+      - DASH_PORT=${DASH_PORT:-8072}
       - DASH_DEBUG=${DASH_DEBUG:-false}
-      - RETRIEVAL_API_URL=${RETRIEVAL_API_URL:-http://retrieval:8001}
+      - RETRIEVAL_API_URL=${RETRIEVAL_API_URL:-http://retrieval:8073}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     networks:
       - rag_network
