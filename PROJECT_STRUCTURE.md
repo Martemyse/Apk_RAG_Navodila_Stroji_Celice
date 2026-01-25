@@ -30,6 +30,7 @@ Single-source config: use `.env` (copy from `env.example`). No other config file
 - `embeddings.py`: query embeddings (local/OpenAI)
 - `reranker.py`: optional reranking
 - `mcp_server.py`, `mcp_tools.py`: agent-facing MCP tools
+ - (planned) LLM answering endpoint: compose prompt + call external API
 
 **Dash UI (`dashapp/`)**
 - `app.py`: user UI for querying
@@ -50,6 +51,7 @@ Single-source config: use `.env` (copy from `env.example`). No other config file
 - Ingestion: PDF → parse/layout → chunk → embed → Weaviate vectors (+ Postgres links for fused units).
 - Retrieval: query → embed → hybrid search (BM25+vector) → optional rerank → results with citations (and image refs if fused).
 - MCP: agents call MCP server → retrieval API → Weaviate/Postgres.
+ - LLM: query → retrieve ContentUnits → prompt → OpenAI/Groq → answer + citations.
 
 ## 🚀 Operations Quick Reference
 - Start: `cp env.example .env && docker-compose up -d`

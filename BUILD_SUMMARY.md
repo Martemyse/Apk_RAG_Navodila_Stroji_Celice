@@ -55,6 +55,11 @@ Built according to specifications - modular, scalable, and ready for your small 
 - `WS /ws` - WebSocket streaming
 - `GET /health` - Health check
 
+#### 2.1 **LLM Answering Layer (External API)** 🟡
+- **Goal**: Provide a final answer grounded in retrieved ContentUnits.
+- **Providers**: OpenAI or Groq (non-streaming).
+- **Planned endpoint**: `POST /answer` → `{answer, citations, images}`.
+
 **Files:**
 - `retrieval/main.py` - FastAPI application
 - `retrieval/weaviate_client.py` - Search operations
@@ -94,7 +99,7 @@ Built according to specifications - modular, scalable, and ready for your small 
 - **Hybrid Search**: BM25 + Vector enabled
 - **Local Embeddings**: CPU-optimized (ONNX)
 - **Multi-tenancy**: Ready (configurable)
-- **Collections**: Document, Chunk (Figure/Table ready)
+- **Collections**: ContentUnit, Document (Figure/Table ready)
 - **Network**: Shared with RAG services
 - **Persistence**: Volume-mounted data
 
@@ -150,8 +155,8 @@ docker-compose up -d
 ```
 
 **3. Access:**
-- Dash UI: http://localhost:8050
-- API Docs: http://localhost:8001/docs
+- Dash UI: http://localhost:8072
+- API Docs: http://localhost:8073/docs
 
 ### Your PDFs
 
@@ -419,7 +424,7 @@ Your production-ready RAG pipeline is complete and documented. Everything you ne
 ```bash
 cd 1_Infrastructure_Weaviate && docker-compose up -d
 cd ../2_Apk_RAG_Navodila_Stroji_Celice && cp env.example .env && docker-compose up -d
-# Visit http://localhost:8050
+# Visit http://localhost:8072
 ```
 
 ---

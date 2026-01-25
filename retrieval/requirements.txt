@@ -7,6 +7,7 @@ sse-starlette
 
 # Embeddings & Reranking
 openai
+groq
 sentence-transformers
 
 # Vector DB

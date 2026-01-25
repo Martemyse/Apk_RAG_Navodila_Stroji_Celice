@@ -12,7 +12,7 @@ This architecture explicitly models text-image relationships and treats them as 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   4-Layer Architecture                       │
+│                   5-Layer Architecture                       │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
 │  1. Raw Storage                                               │
@@ -27,10 +27,15 @@ This architecture explicitly models text-image relationships and treats them as 
 │  3. Vector Store (Weaviate)                                   │
 │     └── ContentUnit (with fused embeddings)                  │
 │                                                               │
-│  4. MCP Tools + API                                          │
+│  4. Retrieval API + MCP Tools                                 │
 │     ├── search_content_units(query)                          │
 │     ├── get_image(image_id)                                   │
 │     └── get_pdf_section(unit_id)                              │
+│                                                               │
+│  5. LLM Answering Layer (external API)                        │
+│     ├── compose_prompt(query, retrieved_units)                │
+│     ├── call_llm(provider=OpenAI|Groq)                        │
+│     └── return answer + citations + image refs                │
 │                                                               │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -124,6 +129,30 @@ This architecture explicitly models text-image relationships and treats them as 
 
 ---
 
+## 🤖 LLM Answering Flow (New)
+
+### User Query: "Explain the start-up procedure for STGH II"
+
+1. **Retrieve** ContentUnits via hybrid search.
+2. **Select evidence**: top-k chunks + any `image_id` references.
+3. **Compose prompt**: include system instructions + chunks + citation metadata.
+4. **Call LLM API**: OpenAI or Groq (non-streaming).
+5. **Return**:
+   - Final answer text
+   - Cited sources (`doc_id`, `page_number`, `section_path`)
+   - Related images (`image_id` → `image_path`)
+
+### Prompt Skeleton (high level)
+```
+System: You answer using only provided sources. Cite sources as [doc_id:page].
+User: <question>
+Sources:
+1) doc_id=..., page=..., section_path=..., text=...
+2) ...
+```
+
+---
+
 ## 🛠️ MCP Tools
 
 ### 1. `search_content_units(query, top_k)`
@@ -180,7 +209,7 @@ python ingestion/main_fused.py
 ### Retrieval API
 ```bash
 # Query content units
-curl -X POST http://localhost:8001/query \
+curl -X POST http://localhost:8073/query \
   -H "Content-Type: application/json" \
   -d '{
     "query": "emergency valve procedure",
@@ -188,10 +217,10 @@ curl -X POST http://localhost:8001/query \
   }'
 
 # Get image
-curl http://localhost:8001/image/{image_id}
+curl http://localhost:8073/image/{image_id}
 
 # Get PDF section
-curl http://localhost:8001/pdf_section/{unit_id}
+curl http://localhost:8073/pdf_section/{unit_id}
 ```
 
 ### MCP (Agents)

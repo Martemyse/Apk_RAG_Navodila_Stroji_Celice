@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     
     # API Configuration
     api_host: str = Field(default="0.0.0.0")
-    api_port: int = Field(default=8001)
+    api_port: int = Field(default=8073)
     api_workers: int = Field(default=4)
     api_reload: bool = Field(default=False)
     
@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     # Reranker Configuration
     reranker_provider: str = Field(default="none")  # 'cohere' or 'none'
     cohere_api_key: str = Field(default="")
+
+    # LLM Answer Configuration (external API)
+    llm_provider: str = Field(default="none")  # 'openai', 'groq', or 'none'
+    llm_model: str = Field(default="gpt-4o-mini")
+    llm_temperature: float = Field(default=0.2)
+    llm_max_tokens: int = Field(default=600)
+    groq_api_key: str = Field(default="")
     
     # Retrieval Configuration (simplified)
     default_top_k: int = Field(default=10)

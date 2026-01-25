@@ -29,6 +29,8 @@ class SearchResult:
         self.doc_id = obj.properties.get("doc_id", "")
         self.text = obj.properties.get("text", "")
         self.page = obj.properties.get("page_number", 0)
+        self.unit_type = obj.properties.get("unit_type", "")
+        self.image_id = obj.properties.get("image_id", "")
         self.section_path = obj.properties.get("section_path", "")
         self.bbox = obj.properties.get("bbox", "")
         self.token_count = obj.properties.get("token_count", 0)
@@ -42,6 +44,8 @@ class SearchResult:
             "doc_id": self.doc_id,
             "text": self.text,
             "page": self.page,
+            "unit_type": self.unit_type,
+            "image_id": self.image_id,
             "section_path": self.section_path,
             "bbox": self.bbox,
             "token_count": self.token_count,

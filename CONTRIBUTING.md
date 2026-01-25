@@ -211,6 +211,7 @@ When adding features:
 2. **Add to SETUP_GUIDE.md** if setup changes
 3. **Update relevant service READMEs**
 4. **Add examples** to documentation
+5. **Document LLM providers** and required env vars (no secrets)
 
 ## 🔍 Code Review
 
@@ -373,6 +374,7 @@ def benchmark(func):
 ### Security Checklist
 
 - [ ] No secrets in code
+- [ ] No API keys in examples (use placeholders)
 - [ ] Input validation
 - [ ] SQL injection prevention
 - [ ] XSS protection

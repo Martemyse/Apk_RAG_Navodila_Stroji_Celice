@@ -13,6 +13,7 @@ Guide for deploying the RAG pipeline to production environments.
 - [ ] Enable CORS restrictions
 - [ ] Set up firewall rules
 - [ ] Use Docker secrets for sensitive data
+- [ ] Store LLM API keys (OpenAI/Groq) in secrets manager
 
 ### Performance
 
@@ -125,9 +126,9 @@ async def query(request: QueryRequest, user=Depends(verify_token)):
 ```nginx
 upstream fastapi_backend {
     least_conn;
-    server retrieval1:8001;
-    server retrieval2:8001;
-    server retrieval3:8001;
+    server retrieval1:8073;
+    server retrieval2:8073;
+    server retrieval3:8073;
 }
 
 server {
@@ -141,7 +142,7 @@ server {
 
     # Dash UI
     location / {
-        proxy_pass http://dashapp:8050;
+        proxy_pass http://dashapp:8072;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -183,12 +184,23 @@ secrets:
     external: true
   jwt_secret:
     external: true
+  llm_api_key:
+    external: true
 ```
 
 **Create secrets:**
 ```bash
 echo "your-weaviate-key" | docker secret create weaviate_key -
 echo "your-jwt-secret" | docker secret create jwt_secret -
+echo "your-llm-key" | docker secret create llm_api_key -
+
+## 🤖 External LLM Providers
+
+If you enable LLM answers, configure:
+- `LLM_PROVIDER=openai|groq`
+- `OPENAI_API_KEY` or `GROQ_API_KEY`
+
+Use secrets in production, not plaintext env vars.
 ```
 
 ## 📈 Scaling

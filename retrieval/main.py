@@ -13,6 +13,7 @@ from config import get_settings
 from weaviate_client import get_weaviate_client, SearchResult
 from embeddings import get_embedding_provider
 from reranker import get_reranker
+from llm_client import get_llm_client
 
 settings = get_settings()
 
@@ -20,6 +21,7 @@ settings = get_settings()
 weaviate_client = None
 embedding_provider = None
 reranker = None
+llm_client = None
 
 
 # Pydantic models
@@ -42,6 +44,26 @@ class QueryResponse(BaseModel):
     processing_time: float
 
 
+class AnswerRequest(BaseModel):
+    """LLM answer request model."""
+    query: str = Field(..., description="User query")
+    top_k: int = Field(default=10, description="Number of chunks to retrieve")
+    alpha: float = Field(default=0.5, description="Hybrid search alpha")
+    rerank: bool = Field(default=False, description="Whether to rerank results")
+    rerank_top_k: int = Field(default=5, description="Number of results after reranking")
+    filters: Optional[Dict[str, Any]] = Field(default=None, description="Optional filters")
+
+
+class AnswerResponse(BaseModel):
+    """LLM answer response model."""
+    query: str
+    answer: str
+    citations: List[Dict[str, Any]]
+    images: List[Dict[str, Any]]
+    total_results: int
+    processing_time: float
+
+
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str
@@ -54,7 +76,7 @@ class HealthResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager."""
-    global weaviate_client, embedding_provider, reranker
+    global weaviate_client, embedding_provider, reranker, llm_client
     
     # Startup
     logger.info("Starting up retrieval service")
@@ -77,6 +99,9 @@ async def lifespan(app: FastAPI):
         
         logger.info("Initializing reranker")
         reranker = get_reranker()
+
+        logger.info("Initializing LLM client")
+        llm_client = get_llm_client()
         
         logger.info("Retrieval service initialized successfully")
     except Exception as e:
@@ -201,6 +226,103 @@ async def query(request: QueryRequest):
         
     except Exception as e:
         logger.error(f"Error processing query: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/answer", response_model=AnswerResponse)
+async def answer(request: AnswerRequest):
+    """
+    Generate an LLM answer grounded in retrieved ContentUnits.
+    """
+    start_time = time.time()
+
+    try:
+        if llm_client is None:
+            raise HTTPException(status_code=400, detail="LLM provider not configured")
+
+        logger.info(f"Received answer query: {request.query}")
+
+        query_vector = embedding_provider.embed(request.query)
+        results = weaviate_client.hybrid_search(
+            query=request.query,
+            query_vector=query_vector,
+            limit=request.top_k,
+            alpha=request.alpha,
+            filters=request.filters
+        )
+
+        if request.rerank and reranker and len(results) > 1:
+            texts = [r.text for r in results]
+            rerank_results = reranker.rerank(
+                query=request.query,
+                documents=texts,
+                top_k=request.rerank_top_k
+            )
+            reranked_indices = [idx for idx, _ in rerank_results]
+            results = [results[i] for i in reranked_indices]
+
+        citations = []
+        images = []
+        seen_citations = set()
+        seen_images = set()
+
+        for result in results:
+            citation_key = (result.doc_id, result.page, result.section_path, result.text)
+            if citation_key not in seen_citations:
+                citations.append({
+                    "doc_id": result.doc_id,
+                    "page_number": result.page,
+                    "section_path": result.section_path,
+                    "text": result.text,
+                })
+                seen_citations.add(citation_key)
+
+            if result.image_id:
+                image_key = (result.image_id, result.doc_id, result.page)
+                if image_key not in seen_images:
+                    images.append({
+                        "image_id": result.image_id,
+                        "doc_id": result.doc_id,
+                        "page_number": result.page,
+                    })
+                    seen_images.add(image_key)
+
+        sources_block = "\n".join(
+            [
+                f"[{idx + 1}] doc_id={c['doc_id']}, page={c['page_number']}, "
+                f"section={c['section_path']}\n{c['text']}"
+                for idx, c in enumerate(citations)
+            ]
+        )
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a technical assistant. Use only the provided sources. "
+                    "Cite sources as [doc_id:page]. If unsure, say you don't know."
+                ),
+            },
+            {"role": "user", "content": request.query},
+            {"role": "user", "content": f"Sources:\n{sources_block}"},
+        ]
+
+        answer_text = llm_client.generate(messages)
+        processing_time = time.time() - start_time
+
+        return AnswerResponse(
+            query=request.query,
+            answer=answer_text,
+            citations=citations,
+            images=images,
+            total_results=len(results),
+            processing_time=processing_time,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating answer: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

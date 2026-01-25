@@ -57,6 +57,12 @@ Production-ready Retrieval-Augmented Generation (RAG) pipeline for manufacturing
 - **Source Retrieval**: Every result includes `doc_id`, `page_number`, `image_id` for complete traceability
 - **MCP**: Model Context Protocol tools for agent integration
 
+### 2.1 LLM Answering (External API)
+- **Goal**: Convert retrieved ContentUnits into a final answer with citations.
+- **Flow**: `query` → retrieve ContentUnits → build prompt → call LLM → return answer + citations + image refs.
+- **Providers**: OpenAI or Groq (non-streaming).
+- **Planned endpoint**: `POST /answer` (returns `{answer, citations, images}`).
+
 ### 3. Dash UI
 - Interactive query interface
 - **Source citations** with PDF file name, page numbers, and image references
@@ -90,7 +96,7 @@ cd ingestion
 python main_fused.py
 
 # Or trigger via API if available
-curl -X POST http://localhost:8001/ingest/all
+curl -X POST http://localhost:8073/ingest/all
 ```
 
 The ingestion process:
@@ -101,8 +107,8 @@ The ingestion process:
 5. Stores in PostgreSQL and Weaviate
 
 ### 4. Access Services
-- **Dash UI**: http://localhost:8050
-- **FastAPI**: http://localhost:8001/docs
+- **Dash UI**: http://localhost:8072
+- **FastAPI**: http://localhost:8073/docs
 - **Weaviate**: http://localhost:8080
 
 ## 🔧 Configuration
@@ -115,6 +121,10 @@ Create `.env` file:
 # Embeddings (choose one)
 EMBEDDING_PROVIDER=local  # or 'openai'
 OPENAI_API_KEY=sk-...     # if using OpenAI
+
+# LLM Answers (external API)
+LLM_PROVIDER=openai       # or 'groq'
+GROQ_API_KEY=...
 
 # Reranker (optional)
 RERANKER_PROVIDER=local   # or 'cohere'
@@ -191,7 +201,7 @@ CHUNK_OVERLAP=100
 import requests
 
 # Query - returns content units with full source information
-response = requests.post("http://localhost:8001/query", json={
+response = requests.post("http://localhost:8073/query", json={
     "query": "How to calibrate PTL007?",
     "top_k": 5
 })
@@ -206,7 +216,7 @@ for result in results["results"]:
     if result.get('has_image') and result.get('image_id'):
         # Retrieve image details
         image_response = requests.get(
-            f"http://localhost:8001/image/{result['image_id']}"
+            f"http://localhost:8073/image/{result['image_id']}"
         )
         image_data = image_response.json()
         print(f"Image: {image_data['image_path']}")
@@ -215,7 +225,7 @@ for result in results["results"]:
     
     # Get PDF section information
     pdf_section = requests.get(
-        f"http://localhost:8001/pdf_section/{result['id']}"
+        f"http://localhost:8073/pdf_section/{result['id']}"
     )
     section_data = pdf_section.json()
     print(f"Document: {section_data['document_title']}")
@@ -239,8 +249,21 @@ Every query result includes complete source information:
 }
 ```
 
+### LLM Answer (Planned)
+```json
+{
+  "answer": "Procedure summary...",
+  "citations": [
+    {"doc_id": "Navodila_STGH II_V1_2", "page_number": 4, "section_path": "..."}
+  ],
+  "images": [
+    {"image_id": "...", "image_path": "...", "page_number": 4}
+  ]
+}
+```
+
 ### Dash UI
-Navigate to http://localhost:8050, enter your question, and get:
+Navigate to http://localhost:8072, enter your question, and get:
 - Streaming answer generation
 - **Source citations** showing:
   - PDF file name (`doc_id`)

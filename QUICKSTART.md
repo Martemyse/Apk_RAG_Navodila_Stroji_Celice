@@ -12,6 +12,7 @@ Get the RAG pipeline running in 5 minutes!
 - CPU local (default): `EMBEDDING_PROVIDER=local`, `EMBEDDING_DEVICE=cpu`
 - GPU local: same as above but `EMBEDDING_DEVICE=cuda`
 - External API: `EMBEDDING_PROVIDER=openai` and set `OPENAI_API_KEY`
+- LLM answers (optional): `LLM_PROVIDER=openai|groq` and set API key
 
 ## 🚀 3-Step Setup
 
@@ -43,8 +44,8 @@ docker-compose logs -f
 ### Step 3: Test It! (30 seconds)
 
 Open your browser:
-- **Dash UI**: http://localhost:8050
-- **API Docs**: http://localhost:8001/docs
+- **Dash UI**: http://localhost:8072
+- **API Docs**: http://localhost:8073/docs
 
 Try a search query in Dash UI:
 ```
@@ -65,20 +66,25 @@ docker ps
 # - t2v_transformers_c
 
 # Test API
-curl http://localhost:8001/health
+curl http://localhost:8073/health
 
 # Test query
-curl -X POST http://localhost:8001/query \
+curl -X POST http://localhost:8073/query \
   -H "Content-Type: application/json" \
   -d '{"query": "test", "top_k": 3}'
+
+# (Planned) LLM answer
+# curl -X POST http://localhost:8073/answer \
+#   -H "Content-Type: application/json" \
+#   -d '{"query": "explain startup procedure", "top_k": 5}'
 ```
 
 ## 📚 What Just Happened?
 
 1. **Weaviate** started
 2. **Ingestion** processed PDFs from `data_pdf/` folder
-3. **Retrieval** API started on port 8001
-4. **Dash UI** started on port 8050
+3. **Retrieval** API started on port 8073
+4. **Dash UI** started on port 8072
 
 ## 🎮 What's Next?
 
@@ -101,7 +107,7 @@ docker-compose logs -f ingestion
 ```python
 import requests
 
-response = requests.post("http://localhost:8001/query", json={
+response = requests.post("http://localhost:8073/query", json={
     "query": "How to maintain ROM27?",
     "top_k": 5,
     "rerank": True
@@ -114,7 +120,7 @@ for result in results["results"]:
 
 **curl:**
 ```bash
-curl -X POST http://localhost:8001/query \
+curl -X POST http://localhost:8073/query \
   -H "Content-Type: application/json" \
   -d '{
     "query": "safety procedures",
@@ -141,7 +147,7 @@ docker exec -it rag_ingestion python main_fused.py
 
 3) Test fused query  
 ```bash
-curl -X POST http://localhost:8001/query \
+curl -X POST http://localhost:8073/query \
   -H "Content-Type: application/json" \
   -d '{"query": "emergency valve procedure", "top_k": 5}'
 ```
@@ -188,8 +194,8 @@ docker-compose up -d
 
 ```bash
 # Check if ports are in use
-netstat -an | grep 8050  # Dash
-netstat -an | grep 8001  # API
+netstat -an | grep 8072  # Dash
+netstat -an | grep 8073  # API
 netstat -an | grep 8080  # Weaviate
 
 # Check Docker resources
@@ -200,7 +206,7 @@ docker system df
 
 ```bash
 # Check if documents ingested
-curl http://localhost:8001/documents
+curl http://localhost:8073/documents
 
 # Re-run ingestion
 docker-compose restart ingestion
@@ -236,8 +242,8 @@ EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 Your RAG pipeline is now running. Start searching your documentation!
 
 **Access Points:**
-- 🖥️ **UI**: http://localhost:8050
-- 🔌 **API**: http://localhost:8001/docs
+- 🖥️ **UI**: http://localhost:8072
+- 🔌 **API**: http://localhost:8073/docs
 - 🗄️ **Weaviate**: http://localhost:8080
 
 ---
